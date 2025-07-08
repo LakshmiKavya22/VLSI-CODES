@@ -1,0 +1,47 @@
+// Code your design here
+//AXI master for data generation
+module axi_stream_master( 
+  input wire clk,
+  input wire resetn,
+  output reg tvalid,
+  output reg [15:0]tdata,
+  output reg tlast,
+  input wire tready);
+  reg [15:0]count;
+  parameter start_count=16'd512;
+  parameter end_count=16'd520;
+  always@(posedge clk or negedge resetn) begin
+    if(!resetn) begin//reset activated
+      tvalid<=0;
+      tdata<=0;
+      tlast<=0;
+      count<=start_count;
+    end
+    else begin
+      tvalid<=1;//valid data available on databus
+      if(tready) begin//slave is ready to accept data//
+        tdata<=count;
+        tlast<=(count==end_count);//last data in transaction
+        if(count==end_count)//transaction reaches last data
+          count<=start_count;
+        else
+          count<=count+1;
+      end
+    end
+  end
+endmodule
+module axi_stream_slave( //consumer
+  input wire clk,
+  input wire resetn,
+  input wire tvalid,
+  input wire [15:0]tdata,
+  input wire tlast,
+  output reg tready);
+  always@(posedge clk or negedge resetn) begin
+    if(!resetn) //reset is activated
+      tready<=1;//slave is ready to accept the data
+    else
+      tready<=~tready;//synchronization clock with ready signal
+  end
+endmodule
+
