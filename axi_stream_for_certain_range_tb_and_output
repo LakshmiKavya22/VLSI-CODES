@@ -1,0 +1,55 @@
+// Code your testbench here
+// or browse Examples
+module tb;
+  reg clk;
+  reg resetn;
+  reg tvalid;
+  wire [15:0]tdata;
+  wire tlast;
+  wire tready;
+  //master instantiation
+  axi_stream_master u1(.clk(clk),.resetn(resetn),.tvalid(tvalid),
+                       .tdata(tdata),.tlast(tlast),.tready(tready));
+   //slave instantiation
+   axi_stream_slave u2(.clk(clk),.resetn(resetn),.tvalid(tvalid),
+                       .tdata(tdata),.tlast(tlast),.tready(tready));
+  initial clk=0;
+  always #5 clk=~clk;
+  initial begin
+    resetn=0;#20;
+    resetn=1;
+  end
+  //handshake mechanism
+  always@(posedge clk ) begin
+    if(tvalid && tready) begin
+         $display("time %0t: Received data=%0d , tvalid=%0b , tready=%0b, tlast=%0b",$time,tdata,tvalid,tready,tlast);
+    end
+  end
+  //termination of simulation
+  initial begin
+    #400;
+    $finish;
+  end
+endmodule
+
+OUTPUT
+
+time 45: Received data=512 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 65: Received data=513 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 85: Received data=514 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 105: Received data=515 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 125: Received data=516 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 145: Received data=517 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 165: Received data=518 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 185: Received data=519 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 205: Received data=520 , tvalid=1 , tready=1, tlast=1
+# KERNEL: time 225: Received data=512 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 245: Received data=513 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 265: Received data=514 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 285: Received data=515 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 305: Received data=516 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 325: Received data=517 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 345: Received data=518 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 365: Received data=519 , tvalid=1 , tready=1, tlast=0
+# KERNEL: time 385: Received data=520 , tvalid=1 , tready=1, tlast=1
+
