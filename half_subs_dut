@@ -1,0 +1,7 @@
+module half_substractor(
+    input A,B,
+    output differ,borrow
+    );
+    assign differ=A^B;
+    assign borrow=(~A)&B;
+endmodule
