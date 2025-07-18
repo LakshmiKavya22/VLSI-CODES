@@ -1,0 +1,23 @@
+GRAY TO BCD
+module gray_bcd(
+    input [3:0]g,
+    output [3:0]b
+    );
+    assign b[3]=g[3];
+    assign b[2]=b[3]^g[2];
+    assign b[1]=b[2]^g[1];
+    assign b[0]=b[1]^g[0];
+endmodule
+
+module gray_bcd_tb;
+reg [3:0]g;
+wire[3:0]b;
+gray_bcd u1(g,b);
+initial
+begin
+$monitor("gray=%0b,bcd=%0b",g,b);
+g=4'b0100;#10;
+g=4'b0011;#10;
+$finish;
+end
+endmodule
