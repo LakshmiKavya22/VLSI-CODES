@@ -1,0 +1,48 @@
+module nand1(a,b,y);
+  input a,b;
+  output y;
+  supply1 vdd;
+  supply0 vss;
+  wire w;
+  pmos u1(y,vdd,a);
+  pmos u2(y,vdd,b);
+  nmos u3(y,w,a);
+  nmos u4(w,vss,b);
+endmodule
+module not1(a,y);
+  input a;
+  output y;
+  supply1 vdd;
+  supply0 vss;
+  pmos u1(y,vdd,a);
+  nmos u2(y,vss,a);
+endmodule
+module exnor(a,b,y);
+  input a,b;
+  output y;
+  wire w1,w2,w3,w4,w5;
+  supply1 vdd;
+  supply0 vss;
+  not1 d1(.a(a),.y(w1));
+  not1 d2(.a(b),.y(w2));
+  nand1 d3(.a(w1),.b(b),.y(w3));
+  nand1 d4(.a(a),.b(w2),.y(w4));
+  nand1 d5(.a(w3),.b(w4),.y(w5));
+  not1 d6(.a(w5,.y(y));
+endmodule
+ 
+TB:
+module design_tb;
+  reg a,b;
+  wire y;
+  exnor u1(a,b,y);
+  initial
+    begin
+      $monitor("A=%0b,B=%0b,Y=%0b",a,b,y);
+      a=0;b=0;#10;
+      a=0;b=1;#10;
+      a=1;b=0;#10;
+      a=1;b=1;#10;
+      $finish;
+    end
+endmodule
