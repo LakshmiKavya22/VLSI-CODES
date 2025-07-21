@@ -1,0 +1,53 @@
+module mux_4_1(
+input [3:0]D,
+input [1:0]S,
+output reg Y);
+always@(*)
+begin
+case(S)
+2'b00: Y=D[0];
+2'b01: Y=D[1];
+2'b10: Y=D[2];
+2'b11: Y=D[3];
+endcase
+end
+endmodule
+module mux_16_1(
+    input [15:0]D,
+    input [3:0]S,
+    output reg Y
+);
+  reg [3:0]w;
+  mux_4_1 u1(.D(D[3:0]),.S(S[1:0]),.Y(w[0]));
+  mux_4_1 u2(.D(D[7:4]),.S(S[1:0]),.Y(w[1]));
+  mux_4_1 u3(.D(D[11:8]),.S(S[1:0]),.Y(w[2]));
+  mux_4_1 u4(.D(D[15:12]),.S(S[1:0]),.Y(w[3]));
+  
+  always@(*) begin
+    case(S[3:2])
+      2'b00: Y=w[0];
+      2'b01: Y=w[1];
+      2'b10: Y=w[2];
+      2'b11: Y=w[3];
+    endcase
+  end
+endmodule
+
+TB:
+
+module mux_16_1_tb;
+  reg [15:0]D;
+  reg [3:0]S;
+  wire Y;
+  mux_16_1 u1(D,S,Y);
+    initial
+      begin
+        $monitor("D=%0b ,S=%0b,Y=%0b ",D,S,Y);
+        D=16'd428;S=4'b0110;#10;
+        D=16'd2567;S=4'd1001;#10;
+        D=16'd214;S=4'd1011;#10;
+        D=16'd924;S=4'd0010;#10;
+        D=16'd1024;S=4'b1010;#10;
+        $finish;
+      end
+  endmodule
