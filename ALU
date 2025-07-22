@@ -1,0 +1,44 @@
+module ALU(
+    input [3:0]A,B,
+    input [2:0]S,
+    output reg [7:0]Y);
+    parameter add=3'b000,
+    substract=3'b001,
+    multiply=3'b010,
+    division=3'b011,
+    and_op=3'b100,
+    or_op=3'b101,
+    not_op=3'b110,
+    ex_or=3'b111;
+    always@(*)
+    case(S)
+    add:Y=A+B;
+    substract: Y=A-B;
+    multiply: Y=A*B;
+    division: Y=A/B;
+    and_op:Y=A&B;
+    or_op: Y=A|B;
+    not_op:Y=~A;
+    ex_or:Y=A^B;
+    endcase
+endmodule
+
+
+module ALU_tb;
+reg [3:0]A,B;
+reg [2:0]S;
+wire [7:0]Y;
+  ALU u1(A,B,S,Y);
+initial
+begin
+$monitor("A=%0b,B=%0b,S=%0b,Y=%0b",A,B,S,Y);
+S=3'b111;A=4'b1010;B=4'b0100;#10;
+S=3'b000;A=4'b1010;B=4'b0100;#10;
+S=3'b001;A=4'b1010;B=4'b0100;#10;
+S=3'b010;A=4'b1010;B=4'b1000;#10;
+S=3'b011;A=4'b1010;B=4'b0101;#10;
+S=3'b100;A=4'b1010;B=4'b0100;#10;
+S=3'b110;A=4'b1111;B=4'b0100;#10;
+$finish;
+end
+endmodule
