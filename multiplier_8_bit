@@ -1,0 +1,24 @@
+module multiplier_8bit (
+    input  [7:0] A,
+    input  [7:0] B,
+    output [15:0] Y
+);
+    assign Y = A * B;
+endmodule
+
+module tb_multiplier;
+    reg  [7:0] A, B;
+    wire [15:0] Y;
+
+    multiplier_8bit uut (
+        .A(A), .B(B), .Y(Y)
+    );
+
+    initial begin
+        A = 8'd36; 
+        B = 8'd129; 
+        #10;
+        $display("A = %d, B = %d, Y = %d", A, B, Y);  // Should show 4644
+        $finish;
+    end
+endmodule
