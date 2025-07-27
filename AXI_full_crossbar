@@ -1,0 +1,57 @@
+// rtl/axi_crossbar.v
+module axi_crossbar #(
+    parameter ADDR_WIDTH = 32,
+    parameter DATA_WIDTH = 64,
+    parameter ID_WIDTH   = 4,
+    parameter NUM_SI     = 2,  // number of masters
+    parameter NUM_MI     = 3   // number of slaves
+) (
+    input  wire                         clk,
+    input  wire                         rst,
+
+    // Slave-side AXI (from masters)
+    input  wire [NUM_SI*ID_WIDTH-1:0]   s_axi_awid,
+    input  wire [NUM_SI*ADDR_WIDTH-1:0] s_axi_awaddr,
+    input  wire [NUM_SI*8-1:0]          s_axi_awlen,
+    input  wire [NUM_SI*3-1:0]          s_axi_awsize,
+    input  wire [NUM_SI*2-1:0]          s_axi_awburst,
+    input  wire [NUM_SI-1:0]            s_axi_awvalid,
+    output wire [NUM_SI-1:0]            s_axi_awready,
+    // ... Write data, write response, AR and R channels similarly
+
+    // Master-side AXI (to slaves)
+    output wire [NUM_MI*ID_WIDTH-1:0]   m_axi_awid,
+    output wire [NUM_MI*ADDR_WIDTH-1:0] m_axi_awaddr,
+    output wire [NUM_MI*8-1:0]          m_axi_awlen,
+    output wire [NUM_MI*3-1:0]          m_axi_awsize,
+    output wire [NUM_MI*2-1:0]          m_axi_awburst,
+    output wire [NUM_MI-1:0]            m_axi_awvalid,
+    input  wire [NUM_MI-1:0]            m_axi_awready,
+    // ... Write data, write response, AR and R channels similarly
+);
+
+// Internal instantiation of axi_crossbar_wr, axi_crossbar_rd, etc.
+// These submodules handle write-side path, read-side path, and address decode.
+// Check the repository for full submodule definitions.
+
+// Example instantiation inside axi_crossbar:
+axi_crossbar_wr #(
+    .ADDR_WIDTH(ADDR_WIDTH),
+    .DATA_WIDTH(DATA_WIDTH),
+    .ID_WIDTH(ID_WIDTH),
+    .NUM_SI(NUM_SI),
+    .NUM_MI(NUM_MI)
+) u_wr (
+    .clk(clk), .rst(rst),
+    .s_axi_awid(s_axi_awid), .s_axi_awaddr(s_axi_awaddr),
+    .s_axi_awlen(s_axi_awlen), .s_axi_awsize(s_axi_awsize),
+    .s_axi_awburst(s_axi_awburst), .s_axi_awvalid(s_axi_awvalid),
+    .s_axi_awready(s_axi_awready),
+    // ... connect write data and response channels
+    .m_axi_awid(m_axi_awid), .m_axi_awaddr(m_axi_awaddr),
+    // ... connect master-side write bus signals
+);
+
+// Similar instantiation for axi_crossbar_rd
+
+endmodule
