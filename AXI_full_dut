@@ -1,0 +1,77 @@
+module soc_axi_top (
+    input  wire clk,
+    input  wire rst,
+
+    // Master 0 AXI
+    input  wire [3:0] M0_awid,
+    input  wire [31:0] M0_awaddr,
+    input  wire       M0_awvalid,
+    output wire       M0_awready,
+    // ... other M0 channels
+
+    // Master 1 AXI
+    input  wire [3:0] M1_awid,
+    input  wire [31:0] M1_awaddr,
+    input  wire       M1_awvalid,
+    output wire       M1_awready,
+    // ... other M1 channels
+
+    // Slave 0 AXI
+    output wire [3:0] S0_awid,
+    output wire [31:0] S0_awaddr,
+    output wire       S0_awvalid,
+    input  wire       S0_awready,
+    // ... other S0 channels
+
+    // Slave 1 and Slave 2 channels similarly
+);
+
+localparam integer NUM_SI = 2;
+localparam integer NUM_MI = 3;
+
+wire [NUM_SI*4-1:0] si_awid;
+wire [NUM_SI*32-1:0] si_awaddr;
+wire [NUM_SI-1:0] si_awvalid, si_awready;
+
+// Pack masters into slave-side bus
+assign si_awid   = {M1_awid, M0_awid};
+assign si_awaddr = {M1_awaddr, M0_awaddr};
+assign si_awvalid = {M1_awvalid, M0_awvalid};
+assign {M1_awready, M0_awready} = si_awready;
+
+// Instantiate crossbar
+wire [NUM_MI*4-1:0] mi_awid;
+wire [NUM_MI*32-1:0] mi_awaddr;
+wire [NUM_MI-1:0] mi_awvalid, mi_awready;
+
+axi_crossbar #(
+    .ADDR_WIDTH(32),
+    .DATA_WIDTH(64),
+    .ID_WIDTH(4),
+    .NUM_SI(NUM_SI),
+    .NUM_MI(NUM_MI)
+) u_xbar (
+    .clk(clk),
+    .rst(rst),
+
+    .s_axi_awid(si_awid),
+    .s_axi_awaddr(si_awaddr),
+    .s_axi_awvalid(si_awvalid),
+    .s_axi_awready(si_awready),
+    // ... other slave-side channels
+    .m_axi_awid(mi_awid),
+    .m_axi_awaddr(mi_awaddr),
+    .m_axi_awvalid(mi_awvalid),
+    .m_axi_awready(mi_awready)
+    // ... other master-side channels
+);
+
+// Unpack master-side to slave interfaces
+assign S0_awid    = mi_awid[ID_WIDTH*0 +: ID_WIDTH];
+assign S0_awaddr  = mi_awaddr[32*0 +: 32];
+assign S0_awvalid = mi_awvalid[0];
+assign mi_awready[0] = S0_awready;
+
+// Similarly unpack for S1 and S2
+
+endmodule
