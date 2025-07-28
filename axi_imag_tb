@@ -1,0 +1,170 @@
+`timescale 1ns / 1ps // Added timescale for consistent simulation
+
+module gpu_axi_slave (
+    input wire clk, rst_n,
+    input wire [31:0] awaddr, wdata,
+    input wire awvalid, wvalid, wlast, bready,
+    input wire [3:0] wstrb, // Not used in this simple slave, but good to keep for AXI compliance.
+    output reg awready, wready, bvalid,
+    output reg [1:0] bresp,
+    input wire [5:0] pixel_index, // Input to select which pixel to output.
+    output reg [7:0] pixel_out    // Output the selected pixel data.
+);
+
+    // Internal buffer to store the received image data.
+    reg [7:0] gpu_buffer [0:63];
+    // Pointer to the current write location in the buffer.
+    reg [5:0] write_ptr;
+    // State register for the FSM.
+    reg [1:0] state;
+
+    // Corrected: Declare loop variable 'i' as reg outside the initial block
+    reg [6:0] i; // 'i' needs to be wide enough for 0 to 63, so 6 bits is enough (0 to 2^6-1 = 63)
+
+    // Local parameters for FSM states.
+    localparam IDLE = 2'b00;   // Initial state, waiting for AXI address.
+    localparam WRITE = 2'b01;  // Receiving AXI write data.
+    localparam RESP = 2'b10;   // Sending AXI write response.
+
+    // Main FSM logic, sensitive to positive clock edge and negative reset edge.
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            // Reset state: All outputs de-asserted, state goes to IDLE.
+            awready <= 0;
+            wready <= 0;
+            bvalid <= 0;
+            bresp <= 2'b00; // OKAY response
+            state <= IDLE;
+            write_ptr <= 0;
+            // Initialize gpu_buffer to 0s on reset
+            for (i = 0; i < 64; i = i + 1) begin // Corrected: Removed 'int' keyword
+                gpu_buffer[i] <= 0;
+            end
+        end else begin
+            // FSM transitions based on current state and AXI handshake signals.
+            case (state)
+                IDLE: begin
+                    awready <= 1; // Always ready to accept an address.
+                    wready <= 0;  // Not ready for data yet.
+                    bvalid <= 0;  // No response to send.
+                    if (awvalid) begin
+                        // If AWVALID is high, address is received.
+                        awready <= 0;       // De-assert AWREADY.
+                        state <= WRITE;     // Move to WRITE state.
+                        write_ptr <= 0;     // Reset write pointer.
+                    end
+                end
+                WRITE: begin
+                    awready <= 0; // Not ready for new address while writing data.
+                    wready <= 1;  // Always ready to accept data.
+                    bvalid <= 0;  // No response to send yet.
+                    if (wvalid && wready) begin
+                        // If WVALID and WREADY are high, data is valid and accepted.
+                        // Store the least significant 8 bits of wdata into the buffer.
+                        gpu_buffer[write_ptr] <= wdata[7:0];
+                        write_ptr <= write_ptr + 1; // Increment write pointer.
+                        if (wlast) begin
+                            // If WLAST is high, this is the last data word.
+                            wready <= 0;    // De-assert WREADY.
+                            state <= RESP;  // Move to RESP state.
+                        end
+                    end
+                end
+                RESP: begin
+                    awready <= 0; // Not ready for new address.
+                    wready <= 0;  // Not ready for data.
+                    bvalid <= 1;  // Assert BVALID to send a response.
+                    bresp <= 2'b00; // OKAY response.
+                    if (bready) begin
+                        // If BREADY is high, response has been accepted.
+                        bvalid <= 0;    // De-assert BREADY.
+                        state <= IDLE;  // Go back to IDLE state.
+                    end
+                end
+                default: begin
+                    // Should not happen, but good practice to handle unexpected states.
+                    state <= IDLE;
+                end
+            endcase
+        end
+    end
+
+    // Combinational logic to output the pixel data based on pixel_index.
+    // This allows reading from the GPU buffer at any time.
+    always @(*) begin
+        pixel_out = gpu_buffer[pixel_index];
+    end
+endmodule
+
+// axi_image_tb.v
+// Testbench for the AXI CPU Master and GPU AXI Slave modules.
+// Simulates a simple AXI write transaction and verifies data transfer.
+
+`timescale 1ns / 1ps // Added timescale for consistent simulation
+
+module axi_image_tb;
+
+// Testbench signals.
+reg clk, rst_n, start;
+wire [31:0] awaddr, wdata;
+wire awvalid, wvalid, wready, awready, wlast, bvalid, bready;
+wire [3:0] wstrb;
+wire [1:0] bresp;
+wire [7:0] pixel_out;
+reg [5:0] pixel_index; // Index to read from the GPU buffer for verification.
+
+// Instantiate the AXI CPU Master module.
+axi_cpu_master cpu (
+    .clk(clk), .rst_n(rst_n), .start(start),
+    .awaddr(awaddr), .awvalid(awvalid), .awready(awready),
+    .wdata(wdata), .wvalid(wvalid), .wstrb(wstrb), .wlast(wlast), .wready(wready),
+    .bresp(bresp), .bvalid(bvalid), .bready(bready)
+);
+
+// Instantiate the GPU AXI Slave module.
+gpu_axi_slave gpu (
+    .clk(clk), .rst_n(rst_n),
+    .awaddr(awaddr), .awvalid(awvalid), .awready(awready),
+    .wdata(wdata), .wvalid(wvalid), .wstrb(wstrb), .wlast(wlast), .wready(wready),
+    .bresp(bresp), .bvalid(bvalid), .bready(bready),
+    .pixel_index(pixel_index), .pixel_out(pixel_out)
+);
+
+// Clock generation.
+initial clk = 0;
+always #5 clk = ~clk; // 10ns clock period (100MHz).
+
+// Test sequence.
+initial begin
+    // Initial reset state.
+    rst_n = 0;
+    start = 0;
+    pixel_index = 0; // Start reading from pixel 0.
+
+    #20; // Hold reset for 20ns (2 clock cycles).
+    rst_n = 1; // Release reset.
+
+    #20; // Wait for some time after reset.
+    start = 1; // Assert start signal to initiate transaction.
+    #10; // Hold start for one clock cycle.
+    start = 0; // De-assert start.
+
+    // Wait for the burst write transaction to complete (BVALID goes high).
+    wait (bvalid);
+    @(posedge clk); // Wait one more clock cycle to ensure bvalid is processed.
+    wait (!bvalid); // Wait for bvalid to go low, indicating transaction completion.
+    #50; // Give some time for signals to settle.
+
+    // Display the contents of the GPU buffer by iterating through pixel_index.
+    $display("=== GPU BUFFER OUTPUT ===");
+    // Display the first 16 pixels. You can change this loop limit to display more.
+    for (pixel_index = 0; pixel_index < 16; pixel_index = pixel_index + 1) begin
+        #10; // Wait for one clock cycle to allow pixel_out to update.
+        $display("pixel[%0d] = %h", pixel_index, pixel_out);
+    end
+
+    #10; // Small delay before finishing simulation.
+    $finish; // End simulation.
+end
+
+endmodule
