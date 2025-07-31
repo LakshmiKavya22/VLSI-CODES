@@ -1,0 +1,44 @@
+module not1(a,Y);
+  input a;
+  output Y;
+  supply1 vdd;
+  supply0 vss;
+  pmos u1(Y,vdd,a);
+  nmos u2(Y,vss,a);
+endmodule
+module design1(A,B,C,Y);
+  input A,B,C;
+  output Y;
+  wire w1,w2,w3;
+  supply1 vdd;
+  supply0 vss;
+  pmos u1(w1,vdd,B);
+  pmos u2(w1,vdd,C);
+  pmos u3(w3,w1,A);
+  nmos u4(w3,w2,B);
+  nmos u5(w2,vss,C);
+  nmos u6(w3,vss,A);
+ 
+  not1 u7(.a(w3),.Y(Y));
+endmodule
+
+module design_tb;
+  reg A,B,C;
+  wire Y;
+  design1 u1(A,B,C,Y);
+  initial
+    begin
+      $monitor("A=%0b,B=%0b,C=%0b,Y=%0b",A,B,C,Y);
+      A=0;B=0;C=0;#10;
+      A=0;B=0;C=1;#10;
+      A=0;B=1;C=0;#10;
+      A=0;B=1;C=1;#10;
+      A=1;B=0;C=0;#10;
+      A=1;B=0;C=1;#10;
+      A=1;B=1;C=0;#10;
+      A=1;B=1;C=1;#10;
+      $finish;
+    end
+endmodule
+
+
