@@ -1,0 +1,30 @@
+// Code your design here
+module sum(a,b,c);
+  input [2:0]a,b;
+  output [3:0]c;
+  assign c=a+b;
+endmodule
+
+//code your tb
+interface sum1;
+  logic [2:0]a;
+  logic [2:0]b;
+  logic [3:0]c;
+endinterface
+module tb;
+  sum1 aif();
+  sum DUT(.a(aif.a),.b(aif.b),.c(aif.c));//instantaion of interface
+  initial begin
+    aif.a=5;aif.b=7;#10;
+    aif.a=6;aif.b=7;#10;
+  end
+  initial begin
+    $monitor("a=%0d,b=%0d,c=%0d",aif.a,aif.b,aif.c);
+    #100;
+    $finish;
+  end
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars;
+  end
+endmodule
