@@ -1,0 +1,50 @@
+`timescale 1ns / 1ps
+module priority_encoder(
+input [15:0]din,
+input en,
+output reg [3:0]Y
+    );
+    always@(*)
+    if (en) begin
+    casex(din)
+    16'b1xxx_xxxx_xxxx_xxxx : Y=4'd15;
+    16'bx1xx_xxxx_xxxx_xxxx : Y=4'd14;
+    16'bxx1x_xxxx_xxxx_xxxx : Y=4'd13;
+    16'bxxx1_xxxx_xxxx_xxxx : Y=4'd12;
+    16'bxxxx_1xxx_xxxx_xxxx : Y=4'd11;
+    16'bxxxx_x1xx_xxxx_xxxx : Y=4'd10;
+    16'bxxxx_xx1x_xxxx_xxxx : Y=4'd9;
+    16'bxxxx_xxx1_xxxx_xxxx : Y=4'd8;
+    16'bxxxx_xxxx_1xxx_xxxx : Y=4'd7;
+    16'bxxxx_xxxx_x1xx_xxxx : Y=4'd6;
+    16'bxxxx_xxxx_xx1x_xxxx : Y=4'd5;
+    16'bxxxx_xxxx_xxx1_xxxx : Y=4'd4;
+    16'bxxxx_xxxx_xxxx_1xxx : Y=4'd3;
+    16'bxxxx_xxxx_xxxx_x1xx : Y=4'd2;
+    16'bxxxx_xxxx_xxxx_xx1x : Y=4'd1;
+    16'bxxxx_xxxx_xxxx_xxx1 : Y=4'd0;
+    default: Y=4'bx;
+    endcase
+    end
+    else
+    Y=4'bx;
+endmodule
+`timescale 1ns / 1ps
+module priority_encoder_tb;
+reg [15:0]din;
+reg en;
+wire [3:0]Y;
+priority_encoder u1(din,en,Y);
+initial
+begin
+$monitor("en=%0b,din=%0d,Y=%0b",en,din,Y);
+en=0;#10;
+en=1;
+for(intege i=0;i<=5;i=i+1)
+begin
+din=$random;#10;
+end
+$finish;
+end
+endmodule
+
