@@ -1,0 +1,24 @@
+module full_substractor(a,b,c,diff,borrow);
+  input a,b,c;
+  output diff, borrow;
+  assign diff=a^b^c;
+  assign borrow=(~a)&b|(~a)&c|b&c;
+endmodule
+
+
+`timescale 1ns / 1ps
+module FULL_SUBSTRACTOR_TB;
+reg a,b,c;
+wire diff, borrow;
+full_substractor u1(a,b,c,diff,borrow);
+initial
+begin
+$monitor("a=%0b,b=%0b,c=%0b,diff=%0b,borrow=%0b",a,b,c,diff,borrow);
+for(integer i=0;i<8;i=i+1) begin
+a=$random;
+b=$random;
+c=$random;#10;
+end
+$finish;
+end
+endmodule
