@@ -1,0 +1,74 @@
+// Code your design here
+// Code your design here
+module demux1to8(D,S,Y);
+  input D;
+  input [2:0]S;
+  output reg [7:0]Y;
+  always@(*) begin
+    Y=8'b0;
+    case(S)
+      3'd0: Y[0]=D;
+      3'd1: Y[1]=D;
+      3'd2: Y[2]=D;
+      3'd3: Y[3]=D;
+      3'd4: Y[4]=D;
+      3'd5: Y[5]=D;
+      3'd6: Y[6]=D;
+      3'd7: Y[7]=D;
+    endcase
+  end
+endmodule
+interface inter;
+  logic D;
+  logic [2:0]S;
+  logic [7:0]Y;
+endinterface. 
+// Code your testbench here
+// or browse Examples
+class generator;
+  int D=1;
+  int S=3'b110;
+  mailbox mbx;
+  task run();
+    mbx.put({S[2:0],D});
+    $display("Generated Value : S=%0b,D=%0b",S,D);
+  endtask
+endclass
+
+class driver;
+  mailbox mbx;
+  virtual inter vif;
+  task run();
+    forever begin
+      bit [4:0]temp;
+    bit [2:0]S;
+    bit D;
+    mbx.get(temp);
+      S=temp[4:1];
+      D=temp[0];
+    vif.S=S;
+    vif.D=D;#10;
+    $display("driver applied values: S=%0b,D=%0b,Output Y=%0b"S,D,vif.Y);
+    end
+  endtask
+endclass
+module tb;
+  inter aif();
+  demux1to8 u1(.S(aif.S),.D(aif.D),.Y(aif.Y));
+  generator gen;
+  driver div;
+  mailbox mbx;
+  initial
+     begin
+       gen=new();
+       div=new();
+       mbx=new();
+       gen.mbx=mbx;
+       div.mbx=mbx;
+       div.vif=aif;
+       fork
+         gen.run();
+         div.run();
+       join
+     end
+endmodule
