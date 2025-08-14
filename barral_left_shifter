@@ -1,0 +1,26 @@
+// Code your design here
+`timescale 1ns/1ps
+module barral_shifter_left(Data,cntrl,Y);
+input [7:0]Data;
+input [2:0]cntrl; //how many positions to shift
+output [7:0]Y;
+assign Y=Data<<cntrl;
+endmodule
+// Code your testbench here
+// or browse Examples
+`timescale 1ns / 1ps
+module barral_shifter_tb;
+reg [7:0]Data;
+reg [2:0]cntrl;
+wire [7:0]Y;
+barral_shifter_left u1(.Data(Data),.cntrl(cntrl),.Y(Y));
+ initial begin
+       $monitor(" Data=%0b, cntrl=%0d, Y=%0b", Data, cntrl, Y);
+       Data = 8'b10110101;  
+       for (integer i = 0; i < 8; i = i + 1) begin // Loop to test all possible shifts
+           cntrl = i;
+           #10; 
+       end
+       $finish;
+   end
+endmodule
