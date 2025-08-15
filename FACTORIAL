@@ -1,0 +1,28 @@
+`timescale 1ns/1ps
+module factorial (
+    input      [2:0] n, 
+    output reg [31:0] fact 
+);
+    integer i;
+    always @(*) begin
+        fact = 1;
+        for (i = 1; i <= n; i = i + 1) begin
+            fact = fact * i;
+        end
+    end
+endmodule
+`timescale 1ns / 1ps
+module factorial_tb;
+  reg [2:0]n;
+  wire [31:0]fact;
+  factorial  u1(.n(n),.fact(fact));
+  initial
+    begin
+      $monitor("n=%0d,Y=%0d",n,fact);
+      n=$urandom_range(1,5);
+      #10;
+      n=6;
+      #10;
+      $finish;
+    end
+endmodule
